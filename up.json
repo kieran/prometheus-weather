@@ -1,0 +1,7 @@
+{
+  "name": "prometheus-weather",
+  "profile": "default",
+  "regions": [
+    "us-east-1"
+  ]
+}

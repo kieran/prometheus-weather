@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: weather
+    # metrics_path: /metrics
+    # scheme: http
+    # scrape_interval: 1m
+    params:
+      lat: [ 43.64 ]
+      lon: [ -79.41 ]
+      appid: [ YOUR_API_KEY_HERE ]
+      # units: metric
+    static_configs:
+      - targets: [ YOUR_DOMAIN_HERE ]

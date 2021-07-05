@@ -1,0 +1,22 @@
+{
+  "name": "prometheus-weather",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx coffee index.coffee",
+    "dev": "npx nodemon index.coffee",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Kieran Huggins",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "coffeescript": "^2.5.1",
+    "koa": "^2.13.1",
+    "koa-router": "^10.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  }
+}
