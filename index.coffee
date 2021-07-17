@@ -1,6 +1,6 @@
 {
   PORT          = 3000
-  API_URL       = "https://api.openweathermap.org/data/2.5/weather"
+  API_URL       = "https://api.openweathermap.org/data/2.5"
   NODE_ENV      = 'development'
 } = process.env
 
@@ -29,26 +29,48 @@ router.get '/metrics', (ctx)->
   return ctx.body = "appid (your openweathermap api key) is required" unless appid
   return ctx.body = "q (city name) or both lat & lon are required" unless q or (lat and lon)
 
-  { status, data } = await axios.get API_URL, params: { q, lat, lon, appid, units }
-  { temp, pressure, feels_like, humidity } = data.main
+  # fetch weather data
+  { status, data } = await axios.get "#{API_URL}/weather", params: { q, lat, lon, appid, units }
+  { temp: temperature, pressure, feels_like, humidity } = data.main
 
-  ctx.body = """
-    # HELP temperature Temperature in degrees Celcius
-    # TYPE temperature gauge
-    temperature{service="openweathermap"} #{temp}
+  # grab openweathermap's interpretation of lat/lon
+  # for the pollution call if we don't already have it
+  { lon, lat } = data.coord unless lat and lon
 
-    # HELP humidity Relative humidity %
-    # TYPE humidity gauge
-    humidity{service="openweathermap"} #{humidity}
+  # fetch air quality data
+  { status, data } = await axios.get "#{API_URL}/air_pollution", params: { lat, lon, appid }
+  { main: { aqi }, components: { co, no: nox, no2, o3, so2, pm2_5, pm10, nh3 } } = data.list[0]
 
-    # HELP feels_like The "feels like" temperature (deg C)
-    # TYPE feels_like gauge
-    feels_like{service="openweathermap"} #{feels_like}
+  ctx.body = [
+    gauge 'temperature',  temperature,  "Temperature (°#{temp_unit_names[units]})"
+    gauge 'humidity',     humidity,     'Relative humidity %'
+    gauge 'feels_like',   feels_like,   "The 'feels like' temperature (°#{temp_unit_names[units]})"
+    gauge 'pressure',     pressure,     'Atmospheric pressure (mbar)'
+    gauge 'aqi',          aqi,          'Air Quality Index from 1 (good) to 5 (very poor)'
+    gauge 'co',           co,           'Carbon monoxide (μg/m³)'
+    gauge 'no',           nox,          'Nitrogen monoxide (μg/m³)'
+    gauge 'no2',          no2,          'Nitrogen dioxide (μg/m³)'
+    gauge 'o3',           o3,           'Ozone (μg/m³)'
+    gauge 'so2',          so2,          'Sulphur dioxide (μg/m³)'
+    gauge 'pm2_5',        pm2_5,        'Fine particulates 2.5μm (μg/m³)'
+    gauge 'pm10',         pm10,         'Coarse particulates 10μm (μg/m³)'
+    gauge 'nh3',          nh3,          'Ammonia (μg/m³)'
+  ].join '\n\n'
 
-    # HELP pressure Atmospheric pressure in mbar (millibars)
-    # TYPE pressure gauge
-    pressure{service="openweathermap"} #{pressure}
+#
+# Helpers
+#
+gauge = (name, value, description)->
   """
+  # HELP #{name} #{description}
+  # TYPE #{name} gauge
+  #{name}{service="openweathermap"} #{value}
+  """
+
+temp_unit_names =
+  standard: 'Kelvin'
+  metric:   'Celsius'
+  imperial: 'Fahrenheit'
 
 #
 # Server init
