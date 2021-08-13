@@ -25,7 +25,7 @@ router.get '/', root = (ctx)->
 
 router.get '/metrics', (ctx)->
   { q, lat, lon, appid, units='metric' } = ctx.query # weather params
-  { polution } = ctx.query # include polution data?
+  { pollution } = ctx.query # include pollution data?
   { location, service="openweathermap" } = ctx.query # pass-through attrs
 
   return ctx.body = "appid (your openweathermap api key) is required" unless appid
@@ -67,7 +67,7 @@ router.get '/metrics', (ctx)->
     gauge 'pressure',     pressure,     'Atmospheric pressure (mbar)'
   ]
 
-  if polution?
+  if pollution?
     # fetch air quality data
     { status, data } = await axios.get "#{API_URL}/air_pollution", params: { lat, lon, appid }
     { main: { aqi }, components: { co, no: nox, no2, o3, so2, pm2_5, pm10, nh3 } } = data.list[0]
