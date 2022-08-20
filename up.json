@@ -3,5 +3,8 @@
   "profile": "default",
   "regions": [
     "us-east-1"
-  ]
+  ],
+  "lambda": {
+    "runtime": "nodejs16.x"
+  }
 }
