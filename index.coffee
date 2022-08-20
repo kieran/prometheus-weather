@@ -68,21 +68,22 @@ router.get '/metrics', (ctx)->
   ]
 
   if pollution?
-    # fetch air quality data
-    { status, data } = await axios.get "#{API_URL}/air_pollution", params: { lat, lon, appid }
-    { main: { aqi }, components: { co, no: nox, no2, o3, so2, pm2_5, pm10, nh3 } } = data.list[0]
+    try
+      # try to fetch air quality data - sometimes this API is down
+      { status, data } = await axios.get "#{API_URL}/air_pollution", params: { lat, lon, appid }
+      { main: { aqi }, components: { co, no: nox, no2, o3, so2, pm2_5, pm10, nh3 } } = data.list[0]
 
-    blocks = blocks.concat [
-      gauge 'aqi',    aqi,    'Air Quality Index from 1 (good) to 5 (very poor)'
-      gauge 'co',     co,     'Carbon monoxide (μg/m³)'
-      gauge 'no',     nox,    'Nitrogen monoxide (μg/m³)'
-      gauge 'no2',    no2,    'Nitrogen dioxide (μg/m³)'
-      gauge 'o3',     o3,     'Ozone (μg/m³)'
-      gauge 'so2',    so2,    'Sulphur dioxide (μg/m³)'
-      gauge 'pm2_5',  pm2_5,  'Fine particulates 2.5μm (μg/m³)'
-      gauge 'pm10',   pm10,   'Coarse particulates 10μm (μg/m³)'
-      gauge 'nh3',    nh3,    'Ammonia (μg/m³)'
-    ]
+      blocks = blocks.concat [
+        gauge 'aqi',    aqi,    'Air Quality Index from 1 (good) to 5 (very poor)'
+        gauge 'co',     co,     'Carbon monoxide (μg/m³)'
+        gauge 'no',     nox,    'Nitrogen monoxide (μg/m³)'
+        gauge 'no2',    no2,    'Nitrogen dioxide (μg/m³)'
+        gauge 'o3',     o3,     'Ozone (μg/m³)'
+        gauge 'so2',    so2,    'Sulphur dioxide (μg/m³)'
+        gauge 'pm2_5',  pm2_5,  'Fine particulates 2.5μm (μg/m³)'
+        gauge 'pm10',   pm10,   'Coarse particulates 10μm (μg/m³)'
+        gauge 'nh3',    nh3,    'Ammonia (μg/m³)'
+      ]
 
   ctx.body = blocks.join '\n\n'
 
