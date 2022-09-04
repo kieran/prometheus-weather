@@ -1,0 +1,65 @@
+substitutions:
+  _SVC: prometheus-weather
+  _REGION: us-west1
+  _IMG: us.gcr.io/${PROJECT_ID}/${_SVC}
+
+options:
+  substitutionOption: ALLOW_LOOSE
+  dynamic_substitutions: true
+
+steps:
+  # Pull the previous container for the layer cache
+  - id: Pull
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        docker pull $_IMG:latest || exit 0
+
+  # Build the container image
+  - id: Build
+    name: 'gcr.io/cloud-builders/docker'
+    args: [
+      build,
+      --cache-from, '$_IMG:latest',
+      -t, '$_IMG:$COMMIT_SHA',
+      -t, '$_IMG:latest',
+      -f, Dockerfile,
+      .
+    ]
+
+  # Push layers
+  - id: Push
+    name: gcr.io/cloud-builders/docker
+    args: [ push, --all-tags, $_IMG ]
+
+  # Deploy to Cloud Run
+  - id: Deploy
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    entrypoint: gcloud
+    args: [
+      run, services, update, $_SVC,
+      --project, $PROJECT_ID,
+      --platform, managed,
+      --region, $_REGION,
+      --image, '$_IMG:$COMMIT_SHA',
+      --quiet
+    ]
+
+  # Prune all previous images to reduce storage costs
+  - id: Prune
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -e
+        echo "Cleaning image $_IMG"
+        for digest in $(gcloud container images list-tags $_IMG --filter="NOT tags:latest" --format='get(digest)'); do
+          (
+            set -x
+            echo "deleting $_IMG@${digest} ..."
+            gcloud container images delete -q --force-delete-tags "$_IMG@${digest}"
+          )
+        done

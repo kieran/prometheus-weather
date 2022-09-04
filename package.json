@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "npx coffee index.coffee",
-    "dev": "npx nodemon index.coffee",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "npx nodemon index.coffee"
   },
   "author": "Kieran Huggins",
   "license": "ISC",
